@@ -51,7 +51,10 @@ struct Curl_URL {
 };
 
 #define DEFAULT_SCHEME "https"
-#define MAX_SCHEME_LEN 48
+
+/* scheme is not URL encoded, the longest libcurl supported ones are 6
+   letters */
+#define MAX_SCHEME_LEN 8
 
 static void free_urlhandle(struct Curl_URL *u)
 {
@@ -219,15 +222,21 @@ bool Curl_is_absolute_url(const char *url, char *buf, size_t buflen)
 {
   size_t i;
   for(i = 0; i < buflen && url[i]; ++i) {
-    if(url[i] == '/')
-      return FALSE;
-    else if(url[i] == ':') {
+    char s = url[i];
+    if(s == ':') {
       if(buf)
         buf[i] = 0;
       return TRUE;
     }
-    if(buf)
-      buf[i] = (char)TOLOWER(url[i]);
+    /* RFC 3986 3.1 explains:
+      scheme      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    */
+    else if(ISALNUM(s) || (s == '+') || (s == '-') || (s == '.') ) {
+      if(buf)
+        buf[i] = (char)TOLOWER(s);
+    }
+    else
+      break;
   }
   return FALSE;
 }

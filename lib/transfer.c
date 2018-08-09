@@ -1493,7 +1493,7 @@ CURLcode Curl_follow(struct Curl_easy *data,
     }
   }
 
-  if(!Curl_is_absolute_url(newurl, NULL, 48)) {
+  if(!Curl_is_absolute_url(newurl, NULL, 8)) {
     /***
      *DANG* this is an RFC 2068 violation. The URL is supposed
      to be absolute and this doesn't seem to be that!

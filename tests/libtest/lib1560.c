@@ -246,7 +246,7 @@ static struct urltestcase get_url_list[] = {
   {"http://host/file\n\x03", "", 0, 0, CURLUE_MALFORMED_INPUT},
   {"htt\x02://host/file", "",
    CURLU_NON_SUPPORT_SCHEME, 0, CURLUE_MALFORMED_INPUT},
-  {" http://host/file", "", 0, 0, CURLUE_UNSUPPORTED_SCHEME},
+  {" http://host/file", "", 0, 0, CURLUE_MALFORMED_INPUT},
   /* here the password ends at the semicolon and options is 'word' */
   {"imap://user:pass;word@host/file",
    "imap://user:pass;word@host/file",
