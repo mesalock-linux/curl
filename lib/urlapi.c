@@ -1247,7 +1247,7 @@ CURLUcode curl_url_set(CURLU *u, CURLUPart what,
           o++;
         }
         else {
-          snprintf(o, 4, "%%%02X", *i);
+          snprintf(o, 4, "%%%02x", *i);
           o += 3;
         }
       }

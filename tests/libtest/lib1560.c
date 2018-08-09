@@ -343,7 +343,7 @@ static struct setcase set_parts_list[] = {
    0, 0, CURLUE_NO_HOST},
   {NULL,
    "scheme=https,user=   @:,host=foobar,",
-   "https://%20%20%20%40%3A@foobar/",
+   "https://%20%20%20%40%3a@foobar/",
    0, CURLU_URLENCODE, CURLUE_OK},
   {NULL,
    "scheme=https,host=  ,path= ,user= ,password= ,query= ,fragment= ,",
