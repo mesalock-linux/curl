@@ -888,7 +888,7 @@ CURLUcode curl_url_get(CURLU *u, CURLUPart what,
                        char **part, unsigned int flags)
 {
   char *ptr;
-  CURLUcode ifmissing;
+  CURLUcode ifmissing = CURLUE_UNKNOWN_PART;
   char portbuf[7];
   bool urldecode = (flags & CURLU_URLDECODE)?1:0;
   bool plusdecode = FALSE;
@@ -1030,7 +1030,6 @@ CURLUcode curl_url_get(CURLU *u, CURLUPart what,
     break;
   }
   default:
-    ifmissing = CURLUE_UNKNOWN_PART;
     ptr = NULL;
   }
   if(ptr) {
