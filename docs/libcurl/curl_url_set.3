@@ -65,10 +65,15 @@ says or UTF-8 (when winidn is used).
 .IP CURLUPART_PORT
 Port cannot be URL encoded on set.
 .IP CURLUPART_PATH
+If a path is set in the URL without a leading slash, a slash will be inserted
+automatically when this URL is read from the handle.
 .IP CURLUPART_QUERY
 The query part will also get spaces converted to pluses when asked to URL
 encode on set with the CURLU_URLENCODE bit.
+
+The question mark in the URL is not part of the actual query contents.
 .IP CURLUPART_FRAGMENT
+The hash sign in the URL is not part of the actual fragment contents.
 .SH FLAGS
 The flags argument is zero, one or more bits set in a bitmask.
 .IP CURLU_NON_SUPPORT_SCHEME

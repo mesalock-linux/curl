@@ -35,7 +35,7 @@
 #include "memdebug.h" /* LAST include file */
 
 struct part {
-  int part;
+  CURLUPart part;
   const char *name;
 };
 
@@ -119,6 +119,9 @@ struct urltestcase {
 };
 
 static struct testcase get_parts_list[] ={
+  {"https://127.0.0.1:443",
+   "https | [11] | [12] | [13] | 127.0.0.1 | [15] | / | [17] | [18]",
+   0, CURLU_NO_DEFAULT_PORT, CURLUE_OK},
   {"http://%3a:%3a@ex%0ample/%3f+?+%3f+%23#+%23%3f%g7",
    "http | : | : | [13] | [6] | [15] | /?+ |  ? # | +#?%g7",
    0, CURLU_URLDECODE, CURLUE_OK},
@@ -152,9 +155,6 @@ static struct testcase get_parts_list[] ={
   {"file:///hello.html",
    "file | [11] | [12] | [13] | [14] | [15] | /hello.html | [17] | [18]",
    0, 0, CURLUE_OK},
-  {"https://127.0.0.1:443",
-   "https | [11] | [12] | [13] | 127.0.0.1 | [15] | / | [17] | [18]",
-   0, CURLU_NO_DEFAULT_PORT, CURLUE_OK},
   {"https://127.0.0.1",
    "https | [11] | [12] | [13] | 127.0.0.1 | 443 | / | [17] | [18]",
    0, CURLU_DEFAULT_PORT, CURLUE_OK},
@@ -333,6 +333,10 @@ static int checkurl(const char *url, const char *out)
 
 /* !checksrc! disable SPACEBEFORECOMMA 1 */
 static struct setcase set_parts_list[] = {
+  {"https://host/",
+   "path=%4A%4B%4C,",
+   "https://host/%4a%4b%4c",
+   0, 0, CURLUE_NO_HOST},
   {"https://host/mooo?q#f",
    "path=NULL,query=NULL,fragment=NULL,",
    "https://host/",
@@ -347,7 +351,7 @@ static struct setcase set_parts_list[] = {
    0, CURLU_URLENCODE, CURLUE_OK},
   {NULL,
    "scheme=https,host=  ,path= ,user= ,password= ,query= ,fragment= ,",
-   "https://%20:%20@%20%20%20?%20#%20",
+   "https://%20:%20@%20%20/%20?%20#%20",
    0, CURLU_URLENCODE, CURLUE_OK},
   {NULL,
    "scheme=https,host=foobar,path=/this /path /is /here,",

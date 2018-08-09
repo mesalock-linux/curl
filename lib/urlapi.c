@@ -767,16 +767,8 @@ static CURLUcode seturl(const char *url, CURLU *u, unsigned int flags)
     *fragment++ = 0;
 
   if(!path[0])
-    /* if there's no path set, use a single slash */
-    path = (char *)"/";
-
-  else if(path[0] != '/') {
-    /* We need this function to deal with overlapping memory areas. We know
-       that the memory area 'path' points to is 'urllen' bytes big and that
-       is bigger than the path. Use +1 to move the zero byte too. */
-    memmove(&path[1], path, strlen(path) + 1);
-    path[0] = '/';
-  }
+    /* if there's no path set, unset */
+    path = NULL;
   else if(!(flags & CURLU_PATH_AS_IS)) {
     /* sanitise paths and remove ../ and ./ sequences according to RFC3986 */
     char *newp = Curl_dedotdotify(path);
@@ -791,10 +783,11 @@ static CURLUcode seturl(const char *url, CURLU *u, unsigned int flags)
     else
       free(newp);
   }
-
-  u->path = path_alloced?path:strdup(path);
-  if(!u->path)
-    return CURLUE_OUT_OF_MEMORY;
+  if(path) {
+    u->path = path_alloced?path:strdup(path);
+    if(!u->path)
+      return CURLUE_OUT_OF_MEMORY;
+  }
 
   if(hostname) {
     /*
@@ -957,7 +950,7 @@ CURLUcode curl_url_get(CURLU *u, CURLUPart what,
   case CURLUPART_PATH:
     ptr = u->path;
     if(!ptr) {
-      u->path = strdup("/");
+      ptr = u->path = strdup("/");
       if(!u->path)
         return CURLUE_OUT_OF_MEMORY;
     }
@@ -1015,7 +1008,7 @@ CURLUcode curl_url_get(CURLU *u, CURLUPart what,
       if(h && !(h->flags & PROTOPT_URLOPTIONS))
         options = NULL;
 
-      url = aprintf("%s://%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+      url = aprintf("%s://%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                     scheme,
                     u->user ? u->user : "",
                     u->password ? ":": "",
@@ -1026,6 +1019,7 @@ CURLUcode curl_url_get(CURLU *u, CURLUPart what,
                     u->host,
                     port ? ":": "",
                     port ? port : "",
+                    (u->path && (u->path[0] != '/')) ? "/": "",
                     u->path ? u->path : "/",
                     u->query? "?": "",
                     u->query? u->query : "",
@@ -1255,9 +1249,22 @@ CURLUcode curl_url_set(CURLU *u, CURLUPart what,
       newp = enc;
     }
     else {
+      char *p;
       newp = strdup(part);
       if(!newp)
         return CURLUE_OUT_OF_MEMORY;
+      p = (char *)newp;
+      while(*p) {
+        /* make sure percent encoded are lower case */
+        if((*p == '%') && ISXDIGIT(p[1]) && ISXDIGIT(p[2]) &&
+           (ISUPPER(p[1]) || ISUPPER(p[2]))) {
+          p[1] = (char)TOLOWER(p[1]);
+          p[2] = (char)TOLOWER(p[2]);
+          p += 3;
+        }
+        else
+          p++;
+      }
     }
 
     free(*storep);
