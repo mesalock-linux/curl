@@ -578,7 +578,7 @@ static CURLUcode seturl(const char *url, CURLU *u, unsigned int flags)
   bool url_has_scheme = FALSE;
   char schemebuf[MAX_SCHEME_LEN];
   char *schemep;
-  size_t schemelen;
+  size_t schemelen = 0;
   size_t urllen;
   const struct Curl_handler *h = NULL;
 
