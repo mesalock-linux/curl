@@ -87,6 +87,10 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
 #ifdef ENABLE_IPV6
   struct in6_addr addr6;
 #endif
+  const char *const hostname =
+    SSL_IS_PROXY() ? conn->http_proxy.host.name : conn->host.name;
+  size_t hostname_len = strlen(hostname);
+
   SSL_METHOD *req_method = NULL;
   curl_socket_t sockfd = conn->sock[sockindex];
 
@@ -153,9 +157,6 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
     return CURLE_OUT_OF_MEMORY;
   }
 
-  const char *const hostname =
-    SSL_IS_PROXY() ? conn->http_proxy.host.name : conn->host.name;
-  size_t hostname_len = strlen(hostname);
   if((hostname_len < USHRT_MAX) &&
      (0 == Curl_inet_pton(AF_INET, hostname, &addr4)) &&
 #ifdef ENABLE_IPV6
