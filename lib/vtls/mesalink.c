@@ -138,6 +138,11 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
     return CURLE_OUT_OF_MEMORY;
   }
 
+  SSL_CTX_set_verify(BACKEND->ctx,
+                     SSL_CONN_CONFIG(verifypeer) ? SSL_VERIFY_PEER
+                                                 : SSL_VERIFY_NONE,
+                     NULL);
+
   ciphers = SSL_CONN_CONFIG(cipher_list);
   if(ciphers) {
 #ifdef MESALINK_HAVE_CIPHER
@@ -255,8 +260,7 @@ mesalink_connect_step3(struct connectdata *conn, int sockindex)
     SSL_SESSION *our_ssl_sessionid;
     void *old_ssl_sessionid = NULL;
 
-    our_ssl_sessionid =
-      SSL_get_session(BACKEND->handle);
+    our_ssl_sessionid = SSL_get_session(BACKEND->handle);
 
     Curl_ssl_sessionid_lock(conn);
     incache =
