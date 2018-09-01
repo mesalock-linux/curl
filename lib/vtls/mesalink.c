@@ -345,7 +345,7 @@ mesalink_recv(struct connectdata *conn, int num, char *buf, size_t buffersize,
   int buffsize = (buffersize > (size_t)INT_MAX) ? INT_MAX : (int)buffersize;
   int nread = SSL_read(BACKEND->handle, buf, buffsize);
 
-  if(nread < 0) {
+  if(nread <= 0) {
     int err = SSL_get_error(BACKEND->handle, nread);
 
     switch(err) {
