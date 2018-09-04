@@ -163,14 +163,33 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
   }
 
   if((hostname_len < USHRT_MAX) &&
-     (0 == Curl_inet_pton(AF_INET, hostname, &addr4)) &&
+     (0 == Curl_inet_pton(AF_INET, hostname, &addr4))
 #ifdef ENABLE_IPV6
-     (0 == Curl_inet_pton(AF_INET6, hostname, &addr6)) &&
+     && (0 == Curl_inet_pton(AF_INET6, hostname, &addr6))
 #endif
-     (SSL_set_tlsext_host_name(BACKEND->handle, hostname) != SSL_SUCCESS)) {
-    infof(data,
-          "WARNING: failed to configure server name indication (SNI) "
-          "TLS extension\n");
+  ) {
+    /* hostname is not a valid IP address */
+    if(SSL_set_tlsext_host_name(BACKEND->handle, hostname) != SSL_SUCCESS) {
+      failf(data,
+            "WARNING: failed to configure server name indication (SNI) "
+            "TLS extension\n");
+    }
+    else {
+      /* Check if the hostname is 127.0.0.1 or [::1];
+       * otherwise reject because MesaLink always wants a valid DNS Name
+       * specified in RFC 5280 Section 7.2 */
+      if(strncmp(hostname, "127.0.0.1", 9) == 0
+#ifdef ENABLE_IPV6
+         || strncmp(hostname, "[::1]", 5) == 0
+#endif
+      ) {
+        SSL_set_tlsext_host_name(BACKEND->handle, "localhost");
+      }
+      else {
+        failf(data,
+              "ERROR: MesaLink does not accept an IP address as a hostname\n");
+      }
+    }
   }
 
 #ifdef MESALINK_HAVE_SESSION
