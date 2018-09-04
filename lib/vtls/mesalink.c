@@ -371,6 +371,7 @@ mesalink_recv(struct connectdata *conn, int num, char *buf, size_t buffersize,
 
     switch(err) {
     case SSL_ERROR_ZERO_RETURN: /* no more data */
+    case IO_ERROR_CONNECTION_ABORTED:
       break;
     case SSL_ERROR_WANT_READ:
     case SSL_ERROR_WANT_WRITE:
