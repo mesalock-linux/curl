@@ -83,6 +83,9 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
   char *ciphers;
   struct Curl_easy *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+  const bool verifypeer = SSL_CONN_CONFIG(verifypeer);
+  const char *const ssl_cafile = SSL_CONN_CONFIG(CAfile);
+  const char *const ssl_capath = SSL_CONN_CONFIG(CApath);
   struct in_addr addr4;
 #ifdef ENABLE_IPV6
   struct in6_addr addr6;
@@ -138,10 +141,32 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
     return CURLE_OUT_OF_MEMORY;
   }
 
-  SSL_CTX_set_verify(BACKEND->ctx,
-                     SSL_CONN_CONFIG(verifypeer) ? SSL_VERIFY_PEER
-                                                 : SSL_VERIFY_NONE,
-                     NULL);
+  SSL_CTX_set_verify(
+    BACKEND->ctx, verifypeer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+
+  if(ssl_cafile || ssl_capath) {
+    if(!SSL_CTX_load_verify_locations(BACKEND->ctx, ssl_cafile, ssl_capath)) {
+      if(verifypeer) {
+        failf(data,
+              "error setting certificate verify locations:\n"
+              "  CAfile: %s\n  CApath: %s",
+              ssl_cafile ? ssl_cafile : "none",
+              ssl_capath ? ssl_capath : "none");
+        return CURLE_SSL_CACERT_BADFILE;
+      }
+      infof(data,
+            "error setting certificate verify locations,"
+            " continuing anyway:\n");
+    }
+    else {
+      infof(data, "successfully set certificate verify locations:\n");
+    }
+    infof(data,
+          "  CAfile: %s\n"
+          "  CApath: %s\n",
+          ssl_cafile ? ssl_cafile : "none",
+          ssl_capath ? ssl_capath : "none");
+  }
 
   ciphers = SSL_CONN_CONFIG(cipher_list);
   if(ciphers) {
