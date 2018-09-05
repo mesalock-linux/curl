@@ -275,9 +275,12 @@ mesalink_connect_step2(struct connectdata *conn, int sockindex)
             detail,
             ERR_error_string_n(detail, error_buffer, sizeof(error_buffer)));
       ERR_print_errors_fp(stderr);
-      if(TLS_ERROR_WEBPKI_BAD_DER == detail ||
-         TLS_ERROR_WEBPKI_CERT_NOT_VALID_FOR_NAME == detail) {
-        return CURLE_PEER_FAILED_VERIFICATION;
+      if(detail && SSL_CONN_CONFIG(verifypeer)) {
+        detail &= ~0xFF;
+        if(detail == TLS_ERROR_WEBPKI_ERRORS) {
+          failf(data, "Cert verify failed");
+          return CURLE_PEER_FAILED_VERIFICATION;
+        }
       }
       return CURLE_SSL_CONNECT_ERROR;
     }
