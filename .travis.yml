@@ -6,7 +6,7 @@ cache:
         - $HOME/mbedtls-mbedtls-2.8.0
         - $HOME/libidn2-2.0.4
         - $HOME/wolfssl-3.14.0-stable
-        - $HOME/mesalink-0.7.0
+        - $HOME/mesalink-0.7.1
 
 env:
     global:
@@ -225,13 +225,13 @@ before_script:
       fi
     - |
       if [ $TRAVIS_OS_NAME = linux ]; then
-        if [ ! -e $HOME/mesalink-0.7.0/Makefile ]; then
+        if [ ! -e $HOME/mesalink-0.7.1/Makefile ]; then
           (cd $HOME && \
           curl https://sh.rustup.rs -sSf | sh -s -- -y && \
           source $HOME/.cargo/env && \
-          curl -LO https://github.com/mesalock-linux/mesalink/archive/v0.7.0.tar.gz && \
-          tar -xzf v0.7.0.tar.gz && \
-          cd mesalink-0.7.0 && \
+          curl -LO https://github.com/mesalock-linux/mesalink/archive/v0.7.1.tar.gz && \
+          tar -xzf v0.7.1.tar.gz && \
+          cd mesalink-0.7.1 && \
           ./autogen.sh && \
           ./configure --enable-tls13  && \
           make)
@@ -243,7 +243,7 @@ before_script:
         (cd $HOME/libpsl-0.20.1 && sudo make install)
         (cd $HOME/mbedtls-mbedtls-2.8.0 && sudo make install)
         (cd $HOME/wolfssl-3.14.0-stable && sudo make install)
-        (cd $HOME/mesalink-0.7.0 && sudo make install)
+        (cd $HOME/mesalink-0.7.1 && sudo make install)
       fi
 
 script:
@@ -357,9 +357,6 @@ script:
         fi
 
 # whitelist branches to avoid testing feature branches twice (as branch and as pull request)
-branches:
-    only:
-        - master
 
 notifications:
   email: false
