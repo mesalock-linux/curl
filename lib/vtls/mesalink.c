@@ -83,6 +83,9 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
   char *ciphers;
   struct Curl_easy *data = conn->data;
   struct ssl_connect_data *connssl = &conn->ssl[sockindex];
+  const bool verifypeer = SSL_CONN_CONFIG(verifypeer);
+  const char *const ssl_cafile = SSL_CONN_CONFIG(CAfile);
+  const char *const ssl_capath = SSL_CONN_CONFIG(CApath);
   struct in_addr addr4;
 #ifdef ENABLE_IPV6
   struct in6_addr addr6;
@@ -138,10 +141,32 @@ mesalink_connect_step1(struct connectdata *conn, int sockindex)
     return CURLE_OUT_OF_MEMORY;
   }
 
-  SSL_CTX_set_verify(BACKEND->ctx,
-                     SSL_CONN_CONFIG(verifypeer) ? SSL_VERIFY_PEER
-                                                 : SSL_VERIFY_NONE,
-                     NULL);
+  SSL_CTX_set_verify(
+    BACKEND->ctx, verifypeer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+
+  if(ssl_cafile || ssl_capath) {
+    if(!SSL_CTX_load_verify_locations(BACKEND->ctx, ssl_cafile, ssl_capath)) {
+      if(verifypeer) {
+        failf(data,
+              "error setting certificate verify locations:\n"
+              "  CAfile: %s\n  CApath: %s",
+              ssl_cafile ? ssl_cafile : "none",
+              ssl_capath ? ssl_capath : "none");
+        return CURLE_SSL_CACERT_BADFILE;
+      }
+      infof(data,
+            "error setting certificate verify locations,"
+            " continuing anyway:\n");
+    }
+    else {
+      infof(data, "successfully set certificate verify locations:\n");
+    }
+    infof(data,
+          "  CAfile: %s\n"
+          "  CApath: %s\n",
+          ssl_cafile ? ssl_cafile : "none",
+          ssl_capath ? ssl_capath : "none");
+  }
 
   ciphers = SSL_CONN_CONFIG(cipher_list);
   if(ciphers) {
@@ -235,17 +260,13 @@ mesalink_connect_step2(struct connectdata *conn, int sockindex)
   conn->recv[sockindex] = mesalink_recv;
   conn->send[sockindex] = mesalink_send;
 
-  ret = SSL_connect0(BACKEND->handle);
+  ret = SSL_connect(BACKEND->handle);
   if(ret != SSL_SUCCESS) {
     char error_buffer[MESALINK_MAX_ERROR_SZ];
     int detail = SSL_get_error(BACKEND->handle, ret);
 
-    if(SSL_ERROR_WANT_READ == detail) {
+    if(SSL_ERROR_WANT_CONNECT == detail) {
       connssl->connecting_state = ssl_connect_2_reading;
-      return CURLE_OK;
-    }
-    else if(SSL_ERROR_WANT_WRITE == detail) {
-      connssl->connecting_state = ssl_connect_2_writing;
       return CURLE_OK;
     }
     else {
@@ -254,6 +275,13 @@ mesalink_connect_step2(struct connectdata *conn, int sockindex)
             detail,
             ERR_error_string_n(detail, error_buffer, sizeof(error_buffer)));
       ERR_print_errors_fp(stderr);
+      if(detail && SSL_CONN_CONFIG(verifypeer)) {
+        detail &= ~0xFF;
+        if(detail == TLS_ERROR_WEBPKI_ERRORS) {
+          failf(data, "Cert verify failed");
+          return CURLE_PEER_FAILED_VERIFICATION;
+        }
+      }
       return CURLE_SSL_CONNECT_ERROR;
     }
   }
